@@ -69,6 +69,16 @@ public:
   void setMatrix(const Matrix3& matrix) { _matrix = matrix; }
   void setZDist(long dist) { _zDist = dist; }
 
+  void set_color( bool red, bool green, bool blue );
+  void set_color_index(int index);
+  void do_change_color();
+
+  void change_color(bool change);
+  void change_color_rev(bool change);
+
+  int SEON_LASER_END_DELAY = 100;
+  int col_index = 1;
+  
 private:
   //! send X/Y to DAC
   void sendToDAC(int x, int y);

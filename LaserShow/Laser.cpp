@@ -1,19 +1,25 @@
 // See LICENSE file for details
 // Copyright 2016 Florian Link (at) gmx.de
+// 
+// Sep 14th, 2022 - Seon Rozenblum
+// Updated Laser code to support an RGB laser, running off the Unexpected Maker Laser Controller
+// Switched to the MCP48xx DAC library from the Library Manager
+// https://unexpectedmaker.com/shop/laser-controller
+
 #include "Laser.h"
 
 // these values can be adapted to fine tune sendto:
 
-// if this is enabled, pins need to be 10 and 7 in dac init below, but it is a big speedup!
-#define MCP4X_PORT_WRITE 1
+#include <MCP48xx.h>
 
-#include "DAC_MCP4X.h"
+#define R 4
+#define G 5
+#define B 21
 
-MCP4X dac;
+MCP4822 dac(32);
 
-Laser::Laser(int laserPin)
+Laser::Laser(int laserPin) : _laserPin(laserPin)
 {
-  _laserPin = laserPin;
   _quality = FROM_FLOAT(1./(LASER_QUALITY));
 
   _x = 0;
@@ -38,31 +44,120 @@ Laser::Laser(int laserPin)
 
 void Laser::init()
 {
-  dac.init(MCP4X_4822, 5000, 5000,
-      10, 7, 1);
-  dac.setGain2x(MCP4X_CHAN_A, 0);
-  dac.setGain2x(MCP4X_CHAN_B, 0);
-  dac.begin(1);
- 
-  pinMode(_laserPin, OUTPUT);
+
+  dac.init();
+  dac.turnOnChannelA();
+  dac.turnOnChannelB();
+
+  // We configure the channels in High gain
+  // It is also the default value so it is not really needed
+  dac.setGainA(MCP4822::High);
+  dac.setGainB(MCP4822::High);
+
+  pinMode(R, OUTPUT);
+  pinMode(G, OUTPUT);
+  pinMode(B, OUTPUT);
+
+  digitalWrite(R, HIGH);
+  digitalWrite(G, HIGH);
+  digitalWrite(B, HIGH);
+}
+
+int color_change = 0;
+
+void Laser::set_color( bool red, bool green, bool blue )
+{
+  digitalWrite(R, !red);
+  digitalWrite(G, !green);
+  digitalWrite(B, !blue);
+}
+
+void Laser::set_color_index( int index )
+{
+  col_index = index;
+}
+
+void Laser::do_change_color()
+{
+  switch (col_index)
+  {
+    case 0:  // Off
+      set_color(false, false, false);
+      break;
+
+    case 1:  // Red
+      set_color(true, false, false);
+      break;
+
+    case 2:  // Green
+      set_color(false, true, false);
+      break;
+
+    case 3:  // Blue
+      set_color(false, false, true);
+      break;
+
+    case 4:  //  Yellow
+      set_color(true, true, false);
+      break;
+
+    case 5: // cyan
+      set_color(false, true, true);
+      break;
+
+    case 6: // purple
+      set_color(true, false, true);
+      break;
+
+    case 7: // white
+      set_color(true, true, true);
+      break;
+  }
+}
+
+void Laser::change_color(bool cycle)
+{
+  if (cycle)
+  {
+    col_index ++;
+    if ( col_index > 7)
+      col_index = 1;
+  }
+
+  do_change_color();
+}
+
+void Laser::change_color_rev(bool cycle)
+{
+  if (cycle)
+  {
+    col_index--;
+    if ( col_index < 1)
+      col_index = 7;
+  }
+
+  do_change_color();
 }
 
 void Laser::sendToDAC(int x, int y)
 {
-  #ifdef LASER_SWAP_XY
+#ifdef LASER_SWAP_XY
   int x1 = y;
   int y1 = x;
-  #else
+#else
   int x1 = x;
   int y1 = y;
-  #endif
-  #ifdef LASER_FLIP_X
+#endif
+#ifdef LASER_FLIP_X
   x1 = 4095 - x1;
-  #endif
-  #ifdef LASER_FLIP_Y
+#endif
+#ifdef LASER_FLIP_Y
   y1 = 4095 - y1;
-  #endif
-  dac.output2(x1, y1);
+#endif
+
+  dac.setVoltageA(x1);
+  dac.setVoltageB(y1);
+  dac.updateDAC();
 }
 
 void Laser::resetClipArea()
@@ -206,6 +301,13 @@ void Laser::sendtoRaw (long xNew, long yNew)
   {
     diffx = diffy;     
   }
+
+    if (diffx == 0)
+    diffx = 1;
+
+  if (diffy == 0)
+    diffy = 1;
+    
   fdiffx = FROM_INT(fdiffx) / diffx;
   fdiffy = FROM_INT(fdiffy) / diffx;
   // interpolate in FIXPT
@@ -263,7 +365,7 @@ void Laser::on()
   {
     wait(LASER_TOGGLE_DELAY);
     _state = 1;
-    digitalWrite(_laserPin, HIGH);
+    change_color(false);
   }
 }
 
@@ -273,7 +375,9 @@ void Laser::off()
   {
     wait(LASER_TOGGLE_DELAY);
     _state = 0;
-    digitalWrite(_laserPin, LOW);
+    digitalWrite(R, HIGH);
+    digitalWrite(G, HIGH);
+    digitalWrite(B, HIGH);
   }
 }
 
@@ -292,4 +396,3 @@ void Laser::setOffset(long offsetX, long offsetY)
   _offsetX = offsetX;
   _offsetY = offsetY;
 }
-
