@@ -12,13 +12,29 @@
 
 #include <MCP48xx.h>
 
+#if defined(ARDUINO_TINYS3)
+
+#define R 1
+#define G 34
+#define B 8
+
+#elif defined(ARDUINO_TINYS2)
+
+#define R 4
+#define G 14
+#define B 8
+
+#else
+
 #define R 4
 #define G 5
 #define B 21
 
+#endif
+
 MCP4822 dac(32);
 
-Laser::Laser(int laserPin) : _laserPin(laserPin)
+Laser::Laser()
 {
   _quality = FROM_FLOAT(1./(LASER_QUALITY));
 

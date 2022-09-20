@@ -7,8 +7,8 @@
 #include "Objects.h"
 #include "Logo.h"
 
-// Create laser instance (with laser pointer connected to digital pin 5)
-Laser laser(5);
+// Create laser instance
+Laser laser;
 
 void setup()
 {  
@@ -143,8 +143,10 @@ void countDown() {
     float step = 0.01;
     for (int i = 0;i<40;i++) {
       laser.setScale(1);
+      laser.set_color_index(3);
       circle();
       laser.setScale(scale);
+      laser.set_color_index(4);
       Drawing::drawLetter(j, -center/3, -center*2/3 + 100);   
       scale += step;
       step += 0.002;
@@ -300,7 +302,9 @@ void drawWeLove()
     laser.setMaxMove(maxMove);
     maxMove += 200;
     laser.setScale(0.4);
+    laser.set_color_index(2);
     Drawing::drawString("ARDUINO",-w1/2, SIN((i*10) % 360)/100.);
+    laser.set_color_index(6);
     if (i>100) {
       laser.resetMaxMove();
       laser.setScale(2 + SIN((i*10)%360) / 10000.);
@@ -374,23 +378,37 @@ void drawScroller(String s, float scale = 0.5, int offsetY = 2048, int speed = 1
 
 void loop() {
   countDown();
+  laser.change_color(true);
   letterEffect();
+  laser.change_color(true);
   presents();
+  laser.change_color(true);
   arduino();
+  laser.change_color(true);
   laserShow();
+  laser.change_color(true);
   drawPlane();
+  laser.change_color(true);
   drawLogo();
+  laser.change_color(true);
   drawScroller(String("THIS PROJECT IS AVAILABLE ON INSTRUCTABLES.COM"),0.5,2048,100);
+  laser.change_color(true);
   drawWeLove();
+  laser.change_color(true);
   drawArduino2DRotate();
+  laser.change_color(true);
   whatAbout3D();
+  laser.change_color(true);
   rotateCube(400);
+  laser.change_color(true);
   drawBike();
+  laser.change_color(true);
   globe(200);
+  laser.change_color(true);
   drawArduino3D();
+  laser.change_color(true);
   drawScroller(String("SOURCE CODE AVAILABLE ON GITHUB!"),0.25,2048,100);
 
 //  drawObjects();
 //  jumpingText();
 }
-

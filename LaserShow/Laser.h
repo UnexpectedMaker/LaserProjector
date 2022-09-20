@@ -1,5 +1,11 @@
 // See LICENSE file for details
 // Copyright 2016 Florian Link (at) gmx.de
+//
+// Sep 14th, 2022 - Seon Rozenblum
+// Updated Laser code to support an RGB laser, running off the Unexpected Maker Laser Controller
+// Switched to the MCP48xx DAC library from the Library Manager
+// https://unexpectedmaker.com/shop/laser-controller
+
 #ifndef LASER_H
 #define LASER_H
 
@@ -37,9 +43,7 @@
 class Laser
 {
 public:
-  //! The laser is initialized with the laserPin,
-  //! which selects the digital pin that turns the laser pointer on/off.
-  Laser(int laserPin);
+  Laser();
 
   void init();
 
@@ -90,8 +94,6 @@ private:
   int computeOutCode(long x, long y);
   //! returns if the line should be drawn, clips line to clip area
   bool clipLine(long& x0, long& y0, long& x1, long& y1);
-
-  int _laserPin;
 
   FIXPT _quality;
 
